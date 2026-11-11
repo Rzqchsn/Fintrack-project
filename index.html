@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack - Aplikasi Pencatat Keuangan</title>
+
+    <!-- Tailwind CSS untuk Desain UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js untuk Grafik Keuangan -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts (Futuristik / Modern) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen pb-12">
+
+    <!-- Navbar -->
+    <nav class="bg-emerald-600 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold tracking-widest" style="font-family: 'Orbitron', sans-serif;">
+                    📊 FinTrack
+                </h1>
+                <p class="text-xs text-emerald-100 tracking-wide" style="font-family: 'Space Grotesk', sans-serif;">
+                    Sistem Pencatatan Keuangan & Jurnal Usaha UMKM
+                </p>
+            </div>
+            <button onclick="hapusSemuaData()" class="text-xs bg-emerald-700 hover:bg-red-600 px-3 py-1.5 rounded transition">
+                Reset Semua Data
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 mt-6">
+        
+        <!-- 1. RINGKASAN KEUANGAN (DASHBOARD) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                <p class="text-xs font-semibold uppercase text-slate-400">Total Pemasukan</p>
+                <h2 id="total-pemasukan" class="text-2xl font-bold text-emerald-600 mt-1">Rp 0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-rose-500">
+                <p class="text-xs font-semibold uppercase text-slate-400">Total Pengeluaran</p>
+                <h2 id="total-pengeluaran" class="text-2xl font-bold text-rose-600 mt-1">Rp 0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-xs font-semibold uppercase text-slate-400">Saldo Bersih (Kas)</p>
+                <h2 id="saldo-akhir" class="text-2xl font-bold text-blue-600 mt-1">Rp 0</h2>
+            </div>
+        </div>
+
+        <!-- 2. FORM INPUT & GRAFIK -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            
+            <!-- Form Input Pemasukan & Pengeluaran -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold mb-4 border-b pb-2">Catat Transaksi Baru</h3>
+                <form id="form-transaksi" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Transaksi</label>
+                        <input type="date" id="tanggal" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Jenis Transaksi</label>
+                        <select id="jenis" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="pemasukan">🟢 Pemasukan (Penjualan / Modal)</option>
+                            <option value="pengeluaran">🔴 Pengeluaran (Bahan Baku / Operasional)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Keterangan / Nama Item</label>
+                        <input type="text" id="keterangan" placeholder="Contoh: Penjualan 20 Porsi / Beli Gas" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nominal (Rp)</label>
+                        <input type="number" id="nominal" placeholder="Contoh: 50000" min="1" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow transition">
+                        + Simpan ke Jurnal
+                    </button>
+                </form>
+            </div>
+
+            <!-- Grafik Keuangan -->
+            <div class="bg-white p-6 rounded-xl shadow-sm lg:col-span-2 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 class="text-lg font-bold">Grafik Perbandingan Kas</h3>
+                    <span class="text-xs text-slate-400">Update Otomatis</span>
+                </div>
+                <div class="relative h-64 w-full flex items-center justify-center">
+                    <canvas id="grafikKeuangan"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 3. TABEL JURNAL UMUM -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-3 gap-2">
+                <div>
+                    <h3 class="text-lg font-bold">Jurnal Keuangan UMKM</h3>
+                    <p class="text-xs text-slate-500">Pencatatan kronologis debit (pemasukan) dan kredit (pengeluaran)</p>
+                </div>
+                <!-- Filter & Tombol Simpan ke WhatsApp -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="filter-jenis" onchange="renderAplikasi()" class="border border-slate-300 rounded-lg p-1.5 text-xs outline-none">
+                        <option value="semua">Semua Transaksi</option>
+                        <option value="pemasukan">Hanya Pemasukan</option>
+                        <option value="pengeluaran">Hanya Pengeluaran</option>
+                    </select>
+                    <button onclick="simpanKeWhatsApp()" class="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
+                        📲 Simpan Rekap ke WA
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 text-xs uppercase border-b">
+                            <th class="py-3 px-4">Tanggal</th>
+                            <th class="py-3 px-4">Keterangan Jurnal</th>
+                            <th class="py-3 px-4 text-right">Debit (Masuk)</th>
+                            <th class="py-3 px-4 text-right">Kredit (Keluar)</th>
+                            <th class="py-3 px-4 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-jurnal" class="text-sm divide-y divide-slate-200">
+                        <!-- Data Jurnal akan dimasukkan otomatis oleh JavaScript di sini -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LOGIKA PROGRAM (JAVASCRIPT) -->
+    <script>
+        // 1. INISIALISASI DATA DARI LOCAL STORAGE
+        let daftarTransaksi = JSON.parse(localStorage.getItem('data_umkm')) || [];
+        let chartInstance = null;
+
+        // Set tanggal hari ini secara default di form input
+        document.getElementById('tanggal').valueAsDate = new Date();
+
+        // Format angka ke Rupiah
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(angka);
+        }
+
+        // 2. FUNGSI MENAMBAH TRANSAKSI BARU
+        document.getElementById('form-transaksi').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const tanggal = document.getElementById('tanggal').value;
+            const jenis = document.getElementById('jenis').value;
+            const keterangan = document.getElementById('keterangan').value;
+            const nominal = parseFloat(document.getElementById('nominal').value);
+
+            const transaksiBaru = {
+                id: Date.now(), // ID unik berdasarkan waktu
+                tanggal: tanggal,
+                jenis: jenis,
+                keterangan: keterangan,
+                nominal: nominal
+            };
+
+            daftarTransaksi.push(transaksiBaru);
+            simpanKeStorage();
+            renderAplikasi();
+
+            // Reset input keterangan dan nominal
+            document.getElementById('keterangan').value = '';
+            document.getElementById('nominal').value = '';
+        });
+
+        // 3. FUNGSI MENGHAPUS SATU TRANSAKSI
+        function hapusTransaksi(id) {
+            daftarTransaksi = daftarTransaksi.filter(item => item.id !== id);
+            simpanKeStorage();
+            renderAplikasi();
+        }
+
+        // 4. FUNGSI RESET SEMUA DATA
+        function hapusSemuaData() {
+            if (confirm('Yakin ingin menghapus seluruh catatan jurnal keuangan?')) {
+                daftarTransaksi = [];
+                simpanKeStorage();
+                renderAplikasi();
+            }
+        }
+
+        // Simpan ke memori browser
+        function simpanKeStorage() {
+            localStorage.setItem('data_umkm', JSON.stringify(daftarTransaksi));
+        }
+
+        // 5. FUNGSI UTAMA: UPDATE TAMPILAN, JURNAL, DAN GRAFIK
+        function renderAplikasi() {
+            const tbody = document.getElementById('tabel-jurnal');
+            const filter = document.getElementById('filter-jenis').value;
+            tbody.innerHTML = '';
+
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+
+            // Urutkan transaksi dari tanggal terbaru
+            const transaksiTerurut = [...daftarTransaksi].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+            transaksiTerurut.forEach(item => {
+                // Hitung total keseluruhan
+                if (item.jenis === 'pemasukan') {
+                    totalMasuk += item.nominal;
+                } else {
+                    totalKeluar += item.nominal;
+                }
+
+                // Filter tampilan tabel jurnal
+                if (filter !== 'semua' && item.jenis !== filter) return;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 whitespace-nowrap text-slate-500">${item.tanggal}</td>
+                    <td class="py-3 px-4 font-medium">${item.keterangan}</td>
+                    <td class="py-3 px-4 text-right text-emerald-600 font-semibold">
+                        ${item.jenis === 'pemasukan' ? formatRupiah(item.nominal) : '-'}
+                    </td>
+                    <td class="py-3 px-4 text-right text-rose-600 font-semibold">
+                        ${item.jenis === 'pengeluaran' ? formatRupiah(item.nominal) : '-'}
+                    </td>
+                    <td class="py-3 px-4 text-center space-x-2 whitespace-nowrap">
+                        <button onclick="kirimSatuTransaksiWA(${item.id})" class="text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded font-medium transition">WA</button>
+                        <button onclick="hapusTransaksi(${item.id})" class="text-xs text-rose-500 hover:underline">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (transaksiTerurut.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada catatan transaksi di jurnal.</td></tr>`;
+            }
+
+            // Update Dashboard Ringkasan
+            const saldoAkhir = totalMasuk - totalKeluar;
+            document.getElementById('total-pemasukan').innerText = formatRupiah(totalMasuk);
+            document.getElementById('total-pengeluaran').innerText = formatRupiah(totalKeluar);
+            document.getElementById('saldo-akhir').innerText = formatRupiah(saldoAkhir);
+
+            // Update Grafik
+            updateGrafik(totalMasuk, totalKeluar);
+        }
+
+        // 6. FUNGSI RENDER GRAFIK (CHART.JS)
+        function updateGrafik(masuk, keluar) {
+            const ctx = document.getElementById('grafikKeuangan').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy(); // Hapus grafik lama sebelum menggambar ulang
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Pemasukan (Debit)', 'Pengeluaran (Kredit)', 'Saldo Bersih'],
+                    datasets: [{
+                        label: 'Nominal (Rp)',
+                        data: [masuk, keluar, masuk - keluar],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)', // Hijau Emerald
+                            'rgba(244, 63, 94, 0.8)',  // Merah Rose
+                            'rgba(59, 130, 246, 0.8)'  // Biru
+                        ],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Jalankan aplikasi pertama kali saat halaman dibuka
+        renderAplikasi();
+
+        // --- TEMPAT PENGEMBANGAN FITUR BARU NANTI ---
+        // Contoh: Fungsi export ke Excel/CSV, fitur kategori, atau cetak laporan
+        
+        // FUNGSI SIMPAN REKAP JURNAL KE WHATSAPP (SUDAH DIPERBAIKI)
+        function simpanKeWhatsApp() {
+            if (daftarTransaksi.length === 0) {
+                alert('Belum ada catatan transaksi untuk disimpan ke WhatsApp!');
+                return;
+            }
+
+            const filter = document.getElementById('filter-jenis').value;
+            const transaksiTerurut = [...daftarTransaksi].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+            let teksRincian = '';
+            let nomorUrut = 1;
+
+            transaksiTerurut.forEach(item => {
+                if (item.jenis === 'pemasukan') totalMasuk += item.nominal;
+                else totalKeluar += item.nominal;
+
+                if (filter !== 'semua' && item.jenis !== filter) return;
+
+                const ikon = item.jenis === 'pemasukan' ? '🟢 (+)' : '🔴 (-)';
+                teksRincian += `${nomorUrut}. [${item.tanggal}] ${ikon} *${formatRupiah(item.nominal)}* - ${item.keterangan}\n`;
+                nomorUrut++;
+            });
+
+            const saldoAkhir = totalMasuk - totalKeluar;
+            const tanggalCetak = new Date().toLocaleDateString('id-ID', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
+
+            let pesanWA = `*📊 LAPORAN KEUANGAN FinTrack UMKM*\n`;
+            pesanWA += `Dicetak: ${tanggalCetak}\n`;
+            pesanWA += `----------------------------------\n`;
+            pesanWA += `*RINCIAN JURNAL (${filter.toUpperCase()}):*\n`;
+            pesanWA += teksRincian || 'Tidak ada transaksi pada filter ini.\n';
+            pesanWA += `----------------------------------\n`;
+            pesanWA += `🟢 *Total Pemasukan:* ${formatRupiah(totalMasuk)}\n`;
+            pesanWA += `🔴 *Total Pengeluaran:* ${formatRupiah(totalKeluar)}\n`;
+            pesanWA += `💰 *Saldo Bersih (Kas):* ${formatRupiah(saldoAkhir)}\n`;
+            pesanWA += `----------------------------------`;
+
+            window.open(`https://wa.me/?text=${encodeURIComponent(pesanWA)}`, '_blank');
+        }
+
+        // FUNGSI KIRIM SATU TRANSAKSI SAJA KE WHATSAPP
+        function kirimSatuTransaksiWA(id) {
+            const item = daftarTransaksi.find(t => t.id === id);
+            if (!item) return;
+
+            const status = item.jenis === 'pemasukan' ? '🟢 PEMASUKAN' : '🔴 PENGELUARAN';
+            let pesanWA = `*🧾 CATATAN TRANSAKSI FinTrack UMKM*\n`;
+            pesanWA += `----------------------------------\n`;
+            pesanWA += `*Jenis:* ${status}\n`;
+            pesanWA += `*Tanggal:* ${item.tanggal}\n`;
+            pesanWA += `*Keterangan:* ${item.keterangan}\n`;
+            pesanWA += `*Nominal:* *${formatRupiah(item.nominal)}*\n`;
+            pesanWA += `----------------------------------`;
+
+            window.open(`https://wa.me/?text=${encodeURIComponent(pesanWA)}`, '_blank');
+        }
+    </script>
+</body>
+</html>
