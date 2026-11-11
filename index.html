@@ -3,207 +3,1164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack - Aplikasi Pencatat Keuangan</title>
+    <title>FinTrack v2.0 - Sistem Kasir, Stok & Keuangan UMKM</title>
 
     <!-- Tailwind CSS untuk Desain UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js untuk Grafik Keuangan -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (xlsx) untuk Export File Excel Rapi -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    <!-- Google Fonts (Futuristik / Modern) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-</head>
-<body class="bg-slate-100 font-sans text-slate-800 min-h-screen pb-12">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Navbar -->
-    <nav class="bg-emerald-600 text-white shadow-md">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold tracking-widest" style="font-family: 'Orbitron', sans-serif;">
-                    📊 FinTrack
-                </h1>
-                <p class="text-xs text-emerald-100 tracking-wide" style="font-family: 'Space Grotesk', sans-serif;">
-                    Sistem Pencatatan Keuangan & Jurnal Usaha UMKM
-                </p>
+    <style>
+        body { 
+            font-family: 'Space Grotesk', sans-serif; 
+            background-color: #0b130e;
+            background-image: radial-gradient(circle at 80% 10%, rgba(34, 197, 94, 0.08) 0%, transparent 45%),
+                              radial-gradient(circle at 15% 85%, rgba(16, 185, 129, 0.06) 0%, transparent 45%);
+            color: #f1f5f9;
+        }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* Background khusus Halaman Login sesuai Gambar 2 */
+        .login-bg {
+            background-color: #08110b;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(34, 197, 94, 0.22) 0%, transparent 45%),
+                radial-gradient(circle at 75% 75%, rgba(34, 197, 94, 0.18) 0%, transparent 45%);
+        }
+
+        /* Kartu Login sesuai Gambar 2 */
+        .login-card {
+            background: rgba(23, 30, 26, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+        }
+
+        /* Kartu Dashboard Utama sesuai Gambar 1 */
+        .dark-card {
+            background-color: #131d17;
+            border: 1px solid #213227;
+        }
+
+        .dark-subcard {
+            background-color: #0e1611;
+            border: 1px solid #1e2d23;
+        }
+
+        /* Input & Select Dark Theme */
+        .dark-input {
+            background-color: #111814;
+            border: 1px solid #26352b;
+            color: #f1f5f9;
+        }
+        .dark-input:focus {
+            border-color: #2ce574;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(44, 229, 116, 0.2);
+        }
+        .dark-input::placeholder {
+            color: #64748b;
+        }
+
+        /* Tombol Neon Hijau sesuai Gambar */
+        .btn-neon {
+            background-color: #2ce574;
+            color: #062110;
+            box-shadow: 0 4px 18px rgba(44, 229, 116, 0.25);
+        }
+        .btn-neon:hover {
+            background-color: #22c55e;
+            box-shadow: 0 4px 22px rgba(44, 229, 116, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-16">
+
+    <!-- ========================================== -->
+    <!-- MODAL LOGIN / SETUP USAHA (SESUAI GAMBAR 2)-->
+    <!-- ========================================== -->
+    <div id="modal-login" class="fixed inset-0 login-bg z-50 flex items-center justify-center p-4 hidden">
+        <div class="login-card rounded-3xl max-w-md w-full p-8">
+            <div class="text-center mb-6">
+                <!-- Ikon Bulat Hijau di Atas seperti Gambar Login -->
+                <div class="w-12 h-12 rounded-full bg-emerald-900/60 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4 text-emerald-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M14 7h7v7" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-tight">Welcome to FinTrack</h1>
+                <p class="text-xs text-slate-400 mt-1">Silakan masukkan profil usaha Anda untuk masuk ke FinTrack.</p>
             </div>
-            <button onclick="hapusSemuaData()" class="text-xs bg-emerald-700 hover:bg-red-600 px-3 py-1.5 rounded transition">
-                Reset Semua Data
-            </button>
+
+            <form id="form-login" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Nama Pemilik / Panggilan</label>
+                    <input type="text" id="input-nama-user" placeholder="Contoh: Bang Jago / Ibu Siti" required 
+                        class="w-full dark-input rounded-xl p-3 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Pilih Template Jenis Usaha</label>
+                    <select id="pilih-template-usaha" onchange="cekTemplateUsaha()" 
+                        class="w-full dark-input rounded-xl p-3 text-sm">
+                        <option value="jus">🧃 Pedagang Jus Buah (Otomatis Isi Contoh Stok & Menu)</option>
+                        <option value="cimol">🍡 Tukang Cimol / Gorengan (Otomatis Isi Contoh Stok & Menu)</option>
+                        <option value="warung">🏪 Warung Sembako / Kelontong (Otomatis Isi Contoh Stok & Menu)</option>
+                        <option value="warkop">☕ Warkop / Kedai Kopi (Otomatis Isi Contoh Stok & Menu)</option>
+                        <option value="kustom">✏️ Tulis Jenis Usaha Sendiri (Mulai dari Kosong)</option>
+                    </select>
+                </div>
+
+                <div id="box-usaha-kustom" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Nama / Jenis Usaha Anda</label>
+                    <input type="text" id="input-nama-usaha" placeholder="Contoh: Seblak Prasmanan / Pangkas Rambut" 
+                        class="w-full dark-input rounded-xl p-3 text-sm">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full btn-neon font-bold py-3 rounded-full transition text-sm">
+                        Mulai Berdagang Sekarang
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- NAVBAR & INFO PROFIL (SESUAI GAMBAR 1)     -->
+    <!-- ========================================== -->
+    <nav class="bg-[#09100c] border-b border-[#1c2b21] text-white sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap justify-between items-center gap-3">
+            <div>
+                <div class="flex items-center gap-2.5">
+                    <h1 class="text-xl font-bold tracking-widest font-orbitron text-[#2ce574]">📊 FinTrack</h1>
+                    <span id="badge-usaha" class="bg-[#15291e] text-[#2ce574] border border-[#2ce574]/30 text-xs px-3 py-0.5 rounded-full font-semibold">Usaha UMKM</span>
+                </div>
+                <p id="sapaan-user" class="text-xs text-slate-400 mt-0.5">Overview of your financial performance</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="gantiProfilUsaha()" class="text-xs bg-[#15231b] hover:bg-[#1e3126] text-slate-200 border border-[#263c2f] px-3 py-1.5 rounded-lg transition">
+                    👤 Ganti Profil
+                </button>
+                <button onclick="hapusSemuaData()" class="text-xs bg-rose-950/70 hover:bg-rose-900 text-rose-300 border border-rose-800/50 px-3 py-1.5 rounded-lg transition">
+                    🗑️ Reset Semua
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigasi Tab Menu bergaya Sidebar Pill Gambar 1 -->
+        <div class="bg-[#0d1611] border-t border-[#18261d]">
+            <div class="max-w-6xl mx-auto px-4 flex overflow-x-auto gap-2 py-2 text-xs font-semibold">
+                <button onclick="pindahTab('berdagang')" id="tab-btn-berdagang" class="tab-btn bg-[#16291e] text-[#2ce574] border border-[#2ce574]/30 px-4 py-2 rounded-xl shadow-sm whitespace-nowrap transition font-bold">
+                    🛒 1. Mode Berdagang & Kalkulator
+                </button>
+                <button onclick="pindahTab('stok')" id="tab-btn-stok" class="tab-btn text-slate-400 hover:text-slate-200 hover:bg-[#131f18] px-4 py-2 rounded-xl whitespace-nowrap transition">
+                    📦 2. Stok Bahan Baku (<span id="notif-stok">0</span>)
+                </button>
+                <button onclick="pindahTab('kasbon')" id="tab-btn-kasbon" class="tab-btn text-slate-400 hover:text-slate-200 hover:bg-[#131f18] px-4 py-2 rounded-xl whitespace-nowrap transition">
+                    📒 3. Catatan Kasbon (<span id="notif-kasbon">0</span>)
+                </button>
+                <button onclick="pindahTab('jurnal')" id="tab-btn-jurnal" class="tab-btn text-slate-400 hover:text-slate-200 hover:bg-[#131f18] px-4 py-2 rounded-xl whitespace-nowrap transition">
+                    📊 4. Jurnal & Laporan
+                </button>
+            </div>
         </div>
     </nav>
 
     <main class="max-w-6xl mx-auto px-4 mt-6">
         
-        <!-- 1. RINGKASAN KEUANGAN (DASHBOARD) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500">
-                <p class="text-xs font-semibold uppercase text-slate-400">Total Pemasukan</p>
-                <h2 id="total-pemasukan" class="text-2xl font-bold text-emerald-600 mt-1">Rp 0</h2>
+        <!-- RINGKASAN KEUANGAN (DESAIN KARTU SESUAI GAMBAR 1) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="dark-card p-5 rounded-2xl shadow-sm">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-950 border border-emerald-700/40 flex items-center justify-center text-xs">💵</span>
+                    <p class="text-xs font-medium text-slate-400">Total Pemasukan</p>
+                </div>
+                <h2 id="total-pemasukan" class="text-xl md:text-2xl font-bold text-white">Rp 0</h2>
+                <span class="inline-block mt-2 text-[10px] bg-emerald-950/90 text-[#2ce574] border border-emerald-700/40 px-2 py-0.5 rounded-full font-semibold">↑ Kas Masuk</span>
             </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-rose-500">
-                <p class="text-xs font-semibold uppercase text-slate-400">Total Pengeluaran</p>
-                <h2 id="total-pengeluaran" class="text-2xl font-bold text-rose-600 mt-1">Rp 0</h2>
+
+            <div class="dark-card p-5 rounded-2xl shadow-sm">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-7 h-7 rounded-lg bg-rose-950 border border-rose-700/40 flex items-center justify-center text-xs">🛒</span>
+                    <p class="text-xs font-medium text-slate-400">Total Pengeluaran</p>
+                </div>
+                <h2 id="total-pengeluaran" class="text-xl md:text-2xl font-bold text-white">Rp 0</h2>
+                <span class="inline-block mt-2 text-[10px] bg-rose-950/90 text-rose-400 border border-rose-700/40 px-2 py-0.5 rounded-full font-semibold">↓ Kas Keluar</span>
             </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <p class="text-xs font-semibold uppercase text-slate-400">Saldo Bersih (Kas)</p>
-                <h2 id="saldo-akhir" class="text-2xl font-bold text-blue-600 mt-1">Rp 0</h2>
+
+            <div class="dark-card p-5 rounded-2xl shadow-sm">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-950 border border-emerald-700/40 flex items-center justify-center text-xs">🏛️</span>
+                    <p class="text-xs font-medium text-slate-400">Saldo Bersih (Kas)</p>
+                </div>
+                <h2 id="saldo-akhir" class="text-xl md:text-2xl font-bold text-white">Rp 0</h2>
+                <span class="inline-block mt-2 text-[10px] bg-[#2ce574] text-[#052110] px-2 py-0.5 rounded-full font-bold">Safe & Healthy</span>
+            </div>
+
+            <div class="dark-card p-5 rounded-2xl shadow-sm">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-7 h-7 rounded-lg bg-amber-950 border border-amber-700/40 flex items-center justify-center text-xs">📒</span>
+                    <p class="text-xs font-medium text-slate-400">Total Piutang (Kasbon)</p>
+                </div>
+                <h2 id="total-kasbon-card" class="text-xl md:text-2xl font-bold text-amber-400">Rp 0</h2>
+                <span class="inline-block mt-2 text-[10px] bg-amber-950/90 text-amber-300 border border-amber-700/40 px-2 py-0.5 rounded-full font-semibold">Belum Lunas</span>
             </div>
         </div>
 
-        <!-- 2. FORM INPUT & GRAFIK -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- ========================================== -->
+        <!-- TAB 1: MODE BERDAGANG (KASIR + & KALKULATOR) -->
+        <!-- ========================================== -->
+        <section id="sec-berdagang" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Kiri: Tombol Tap + Penjualan Harian -->
+                <div class="lg:col-span-2 dark-card p-5 rounded-2xl shadow-sm">
+                    <div class="flex flex-wrap justify-between items-center border-b border-[#213227] pb-3 mb-4 gap-2">
+                        <div>
+                            <h3 class="text-base font-bold text-white">⚡ Kasir Cepat (Tekan + Saat Pembeli Beli)</h3>
+                            <p class="text-xs text-slate-400">Klik tombol + untuk menghitung pesanan. Rekap sekaligus saat selesai dagang.</p>
+                        </div>
+                        <button onclick="bukaFormMenu()" class="text-xs bg-[#182a20] text-[#2ce574] hover:bg-[#1f372a] border border-[#2ce574]/30 px-3 py-1.5 rounded-xl font-semibold transition">
+                            + Tambah Menu Jualan
+                        </button>
+                    </div>
+
+                    <!-- Form Tambah Menu Jualan (Hidden by default) -->
+                    <form id="form-tambah-menu" class="hidden dark-subcard p-3.5 rounded-xl mb-4">
+                        <p class="text-xs font-bold mb-2 text-slate-200">Tambah Produk / Menu Dagangan Baru</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <input type="text" id="nama-menu-baru" placeholder="Nama (Cth: Jus Mangga)" required class="dark-input rounded-lg p-2 text-xs">
+                            <input type="number" id="harga-menu-baru" placeholder="Harga (Cth: 10000)" min="100" required class="dark-input rounded-lg p-2 text-xs">
+                            <div class="flex gap-1">
+                                <button type="submit" class="btn-neon text-xs font-bold px-3 py-2 rounded-lg w-full">Simpan</button>
+                                <button type="button" onclick="bukaFormMenu()" class="bg-slate-800 text-slate-300 text-xs px-3 py-2 rounded-lg">Batal</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Daftar Kartu Menu Jualan (+) -->
+                    <div id="daftar-menu-kasir" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                        <!-- Diisi oleh JS -->
+                    </div>
+
+                    <!-- Panel Total Penjualan Sementara & Tombol Tutup Buku -->
+                    <div class="bg-[#0e1d14] border border-[#2ce574]/30 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div>
+                            <span class="text-xs text-slate-400 font-medium">Total Penjualan Tercatat Saat Ini:</span>
+                            <div class="flex items-baseline gap-2 mt-0.5">
+                                <h4 id="total-kasir-sementara" class="text-2xl font-bold text-[#2ce574]">Rp 0</h4>
+                                <span id="jumlah-item-kasir" class="text-xs text-emerald-400 font-semibold">(0 porsi/item)</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="resetCounterKasir()" class="w-1/3 sm:w-auto text-xs bg-[#15221a] hover:bg-[#1c2e23] text-slate-300 border border-[#2a3f32] px-3 py-2.5 rounded-xl font-semibold">
+                                Reset 0
+                            </button>
+                            <button onclick="simpanTutupBuku()" class="w-2/3 sm:w-auto text-xs btn-neon px-4 py-2.5 rounded-xl font-bold">
+                                ✅ Selesai / Masuk Jurnal
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pengeluaran Darurat Saat Sedang Dagang -->
+                    <div class="mt-6 pt-4 border-t border-[#213227]">
+                        <div class="flex justify-between items-center mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-rose-400">🚨 Catat Pengeluaran Mendadak (Saat Sedang Dagang)</h4>
+                                <p class="text-xs text-slate-400">Klik sekali untuk langsung mencatat pengeluaran dadakan ke jurnal tanpa mengetik.</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button onclick="catatPengeluaranCepat('Beli Es Batu Tambahan', 10000)" class="text-xs bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 px-3 py-2 rounded-xl font-semibold transition">
+                                🧊 Es Batu (Rp 10.000)
+                            </button>
+                            <button onclick="catatPengeluaranCepat('Beli Kantong Plastik / Cup', 15000)" class="text-xs bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 px-3 py-2 rounded-xl font-semibold transition">
+                                🛍️ Plastik/Cup (Rp 15.000)
+                            </button>
+                            <button onclick="catatPengeluaranCepat('Beli Gas LPG 3 Kg', 22000)" class="text-xs bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 px-3 py-2 rounded-xl font-semibold transition">
+                                🔥 Gas 3Kg (Rp 22.000)
+                            </button>
+                            <button onclick="catatPengeluaranCepat('Uang Kebersihan / Lapak', 5000)" class="text-xs bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 px-3 py-2 rounded-xl font-semibold transition">
+                                🧹 Retribusi/Lapak (Rp 5.000)
+                            </button>
+                            <button onclick="pengeluaranDadakanKustom()" class="text-xs bg-[#1b2a21] hover:bg-[#24382c] text-slate-200 border border-[#2f4939] px-3 py-2 rounded-xl font-semibold transition">
+                                ✏️ Pengeluaran Lainnya...
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kanan: Kalkulator Dagang & Hitung Kembalian -->
+                <div class="dark-card p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white border-b border-[#213227] pb-2 mb-3">🧮 Kalkulator & Hitung Kembalian</h3>
+                        
+                        <!-- Layar Kalkulator -->
+                        <div class="bg-[#080d0a] border border-[#1f3025] text-white p-3.5 rounded-xl mb-3 text-right">
+                            <div id="calc-history" class="text-xs text-slate-500 h-4 overflow-hidden">0</div>
+                            <div id="calc-display" class="text-2xl font-bold font-mono tracking-wider text-[#2ce574] overflow-x-auto">0</div>
+                        </div>
+
+                        <!-- Tombol Angka Kalkulator -->
+                        <div class="grid grid-cols-4 gap-1.5 text-sm font-bold mb-4">
+                            <button onclick="calcClear()" class="col-span-2 bg-rose-950/80 text-rose-300 border border-rose-800/40 hover:bg-rose-900 py-2.5 rounded-xl">C</button>
+                            <button onclick="calcDelete()" class="bg-[#18241d] text-slate-300 hover:bg-[#213127] py-2.5 rounded-xl">⌫</button>
+                            <button onclick="calcInput('/')" class="bg-amber-950/70 text-amber-300 border border-amber-800/40 hover:bg-amber-900 py-2.5 rounded-xl">÷</button>
+
+                            <button onclick="calcInput('7')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">7</button>
+                            <button onclick="calcInput('8')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">8</button>
+                            <button onclick="calcInput('9')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">9</button>
+                            <button onclick="calcInput('*')" class="bg-amber-950/70 text-amber-300 border border-amber-800/40 hover:bg-amber-900 py-2.5 rounded-xl">×</button>
+
+                            <button onclick="calcInput('4')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">4</button>
+                            <button onclick="calcInput('5')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">5</button>
+                            <button onclick="calcInput('6')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">6</button>
+                            <button onclick="calcInput('-')" class="bg-amber-950/70 text-amber-300 border border-amber-800/40 hover:bg-amber-900 py-2.5 rounded-xl">−</button>
+
+                            <button onclick="calcInput('1')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">1</button>
+                            <button onclick="calcInput('2')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">2</button>
+                            <button onclick="calcInput('3')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">3</button>
+                            <button onclick="calcInput('+')" class="bg-amber-950/70 text-amber-300 border border-amber-800/40 hover:bg-amber-900 py-2.5 rounded-xl">+</button>
+
+                            <button onclick="calcInput('0')" class="bg-[#16221b] hover:bg-[#1e2e24] text-white py-2.5 rounded-xl">0</button>
+                            <button onclick="calcInput('000')" class="bg-[#1c2b22] hover:bg-[#25392d] text-emerald-300 py-2.5 rounded-xl text-xs">000</button>
+                            <button onclick="calcResult()" class="col-span-2 btn-neon py-2.5 rounded-xl">=</button>
+                        </div>
+                    </div>
+
+                    <!-- Hitung Kembalian Cepat -->
+                    <div class="dark-subcard p-3.5 rounded-xl">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-emerald-400">💵 Hitung Kembalian Pembeli</span>
+                            <button onclick="ambilTotalKasirKeTagihan()" class="text-[11px] bg-[#1a2e22] text-[#2ce574] border border-[#2ce574]/30 px-2 py-0.5 rounded hover:bg-[#223c2d]">
+                                Ambil dari Kalkulator
+                            </button>
+                        </div>
+                        <div class="space-y-2 mt-2">
+                            <div>
+                                <label class="text-[11px] text-slate-400">Total Belanja Pembeli (Rp)</label>
+                                <input type="number" id="tagihan-pembeli" oninput="hitungKembalian(0)" placeholder="Contoh: 15000" class="w-full dark-input rounded-lg p-1.5 text-xs">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400">Uang Diterima (Klik Pecahan):</label>
+                                <div class="grid grid-cols-4 gap-1 mt-1">
+                                    <button onclick="hitungKembalian(10000)" class="bg-[#16231b] border border-[#263c2e] hover:border-[#2ce574] text-slate-200 text-xs py-1.5 rounded-lg font-semibold">10rb</button>
+                                    <button onclick="hitungKembalian(20000)" class="bg-[#16231b] border border-[#263c2e] hover:border-[#2ce574] text-slate-200 text-xs py-1.5 rounded-lg font-semibold">20rb</button>
+                                    <button onclick="hitungKembalian(50000)" class="bg-[#16231b] border border-[#263c2e] hover:border-[#2ce574] text-slate-200 text-xs py-1.5 rounded-lg font-semibold">50rb</button>
+                                    <button onclick="hitungKembalian(100000)" class="bg-[#16231b] border border-[#263c2e] hover:border-[#2ce574] text-slate-200 text-xs py-1.5 rounded-lg font-semibold">100rb</button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-[#1f3025]">
+                                <span class="text-xs font-semibold text-slate-300">Kembalian:</span>
+                                <span id="teks-kembalian" class="text-base font-bold text-[#2ce574]">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: MANAJEMEN STOK BAHAN BAKU USAHA     -->
+        <!-- ========================================== -->
+        <section id="sec-stok" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Form Tambah Bahan Baku Sendiri -->
+                <div class="dark-card p-5 rounded-2xl shadow-sm h-fit">
+                    <h3 class="text-base font-bold text-white mb-1 border-b border-[#213227] pb-2">📦 Tambah Item Bahan / Stok</h3>
+                    <p class="text-xs text-slate-400 mb-4">Sesuaikan bahan baku dengan kebutuhan usaha Anda (Buah, Gas, Cup, Beras, Kopi, dll).</p>
+
+                    <form id="form-stok" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Nama Bahan / Barang</label>
+                            <input type="text" id="nama-bahan" placeholder="Contoh: Buah Pisang / Gelas Cup / Gas" required class="w-full dark-input rounded-xl p-2.5 text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Stok Saat Ini</label>
+                                <input type="number" id="jumlah-stok" placeholder="Cth: 10" min="0" step="any" required class="w-full dark-input rounded-xl p-2.5 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Satuan</label>
+                                <input type="text" id="satuan-stok" placeholder="Kg / Pcs / Sisir / Tabung" required class="w-full dark-input rounded-xl p-2.5 text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Batas Minimal (Peringatan Habis)</label>
+                            <input type="number" id="batas-stok" placeholder="Cth: 2 (Akan merah jika sisa <= 2)" min="0" step="any" value="2" required class="w-full dark-input rounded-xl p-2.5 text-sm">
+                        </div>
+                        <button type="submit" class="w-full btn-neon font-bold py-2.5 rounded-full transition text-sm">
+                            + Tambah ke Daftar Stok
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Daftar Stok Bahan Baku -->
+                <div class="lg:col-span-2 dark-card p-5 rounded-2xl shadow-sm">
+                    <div class="flex justify-between items-center mb-4 border-b border-[#213227] pb-2">
+                        <div>
+                            <h3 class="text-base font-bold text-white">Daftar Stok Bahan Usaha Anda</h3>
+                            <p class="text-xs text-slate-400">Gunakan tombol [-] saat bahan terpakai, atau klik [🛒 Beli Stok] untuk kulakan & catat pengeluaran otomatis.</p>
+                        </div>
+                    </div>
+
+                    <div id="daftar-stok-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Diisi oleh JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: PENCATAT KASBON / PIUTANG SINGKAT   -->
+        <!-- ========================================== -->
+        <section id="sec-kasbon" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Form Catat Kasbon -->
+                <div class="dark-card p-5 rounded-2xl shadow-sm h-fit">
+                    <h3 class="text-base font-bold text-white mb-1 border-b border-[#213227] pb-2">📒 Catat Kasbon / Hutang Pelanggan</h3>
+                    <p class="text-xs text-slate-400 mb-4">Catat pembeli yang ambil barang dulu dan bayar belakangan.</p>
+
+                    <form id="form-kasbon" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Nama Pelanggan</label>
+                            <input type="text" id="nama-kasbon" placeholder="Contoh: Pak RT / Tetangga Sebelah" required class="w-full dark-input rounded-xl p-2.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Barang yang Diambil / Keterangan</label>
+                            <input type="text" id="ket-kasbon" placeholder="Contoh: 2 Jus Alpukat / Beras 5Kg" required class="w-full dark-input rounded-xl p-2.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Nominal Kasbon (Rp)</label>
+                            <input type="number" id="nominal-kasbon" placeholder="Contoh: 25000" min="1" required class="w-full dark-input rounded-xl p-2.5 text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-full shadow transition text-sm">
+                            + Simpan Catatan Kasbon
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tabel Daftar Kasbon -->
+                <div class="lg:col-span-2 dark-card p-5 rounded-2xl shadow-sm">
+                    <h3 class="text-base font-bold text-white mb-1 border-b border-[#213227] pb-2">Daftar Pelanggan Belum Lunas</h3>
+                    <p class="text-xs text-slate-400 mb-4">Saat pelanggan membayar, klik tombol <b>"✅ Lunas"</b> agar uangnya otomatis masuk ke Jurnal Pemasukan.</p>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-[#0e1611] text-slate-400 text-xs uppercase border-b border-[#213227]">
+                                    <th class="py-3 px-3">Tanggal</th>
+                                    <th class="py-3 px-3">Pelanggan</th>
+                                    <th class="py-3 px-3">Keterangan</th>
+                                    <th class="py-3 px-3 text-right">Nominal</th>
+                                    <th class="py-3 px-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-kasbon" class="text-sm divide-y divide-[#1e2d23]">
+                                <!-- Diisi JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: JURNAL UMUM, GRAFIK & EKSPOR WA/XLSX-->
+        <!-- ========================================== -->
+        <section id="sec-jurnal" class="hidden space-y-6">
             
-            <!-- Form Input Pemasukan & Pengeluaran -->
-            <div class="bg-white p-6 rounded-xl shadow-sm">
-                <h3 class="text-lg font-bold mb-4 border-b pb-2">Catat Transaksi Baru</h3>
-                <form id="form-transaksi" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Transaksi</label>
-                        <input type="date" id="tanggal" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            <!-- Grafik Cash Flow Trend (Kiri) & Add New Transaction (Kanan) sesuai Gambar 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Grafik Keuangan bergaya Cash Flow Trend Gambar 1 -->
+                <div class="dark-card p-6 rounded-2xl shadow-sm lg:col-span-2 flex flex-col justify-between">
+                    <div class="flex flex-wrap justify-between items-start mb-4 border-b border-[#213227] pb-3 gap-2">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Cash Flow Trend</h3>
+                            <p class="text-xs text-slate-400">Perbandingan tren Pemasukan vs Pengeluaran usaha Anda</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs font-semibold">
+                            <span class="flex items-center gap-1.5 text-slate-200">
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#2ce574] inline-block"></span> Pemasukan (Income)
+                            </span>
+                            <span class="flex items-center gap-1.5 text-slate-400">
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#64748b] inline-block"></span> Pengeluaran (Expense)
+                            </span>
+                        </div>
                     </div>
+                    <div class="relative h-64 w-full flex items-center justify-center">
+                        <canvas id="grafikKeuangan"></canvas>
+                    </div>
+                </div>
+
+                <!-- Form Input Manual sesuai kartu "Add New Transaction" di Gambar 1 -->
+                <div class="dark-card p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-base font-bold text-white mb-1">Add New Transaction</h3>
+                    <p class="text-xs text-slate-400 mb-4 border-b border-[#213227] pb-2">Catat pemasukan atau pengeluaran baru dengan cepat.</p>
+                    <form id="form-transaksi" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Tanggal Transaksi</label>
+                            <input type="date" id="tanggal" required class="w-full dark-input rounded-xl p-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Jenis Transaksi</label>
+                            <select id="jenis" required class="w-full dark-input rounded-xl p-2 text-sm">
+                                <option value="pemasukan">🟢 Pemasukan (Penjualan / Modal)</option>
+                                <option value="pengeluaran">🔴 Pengeluaran (Bahan Baku / Operasional)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Keterangan / Nama Item</label>
+                            <input type="text" id="keterangan" placeholder="Contoh: Penjualan 20 Porsi / Beli Gas" required class="w-full dark-input rounded-xl p-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Nominal (Rp)</label>
+                            <input type="number" id="nominal" placeholder="Contoh: 50000" min="1" required class="w-full dark-input rounded-xl p-2 text-sm">
+                        </div>
+                        <button type="submit" class="w-full btn-neon font-bold py-2.5 rounded-full transition text-sm mt-2">
+                            + Add Record ke Jurnal
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Tabel Jurnal & Fitur Pilihan Metode Jurnal (WA Teks / File Excel ke WA) -->
+            <div class="dark-card p-6 rounded-2xl shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-[#213227] pb-3 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Jenis Transaksi</label>
-                        <select id="jenis" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                            <option value="pemasukan">🟢 Pemasukan (Penjualan / Modal)</option>
-                            <option value="pengeluaran">🔴 Pengeluaran (Bahan Baku / Operasional)</option>
+                        <h3 class="text-base font-bold text-white">Recent Transactions (Jurnal Keuangan UMKM)</h3>
+                        <p class="text-xs text-slate-400">Pilih metode pengiriman jurnal ke WhatsApp: Teks Biasa atau File Excel (.xlsx) Rapi</p>
+                    </div>
+                    
+                    <!-- Filter & Pilihan Metode Ekspor Jurnal -->
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <select id="filter-jenis" onchange="renderAplikasi()" class="dark-input rounded-xl p-2 text-xs">
+                            <option value="semua">Semua Transaksi</option>
+                            <option value="pemasukan">Hanya Pemasukan</option>
+                            <option value="pengeluaran">Hanya Pengeluaran</option>
                         </select>
+
+                        <!-- Pilihan Metode Ekspor ke WhatsApp -->
+                        <div class="flex items-center bg-[#0d1510] p-1 rounded-xl border border-[#26392d]">
+                            <select id="metode-jurnal" class="bg-transparent text-xs font-semibold px-2 py-1 outline-none text-slate-200">
+                                <option value="wa_teks" class="bg-[#131d17]">💬 Metode 1: Kirim Teks Biasa ke WA</option>
+                                <option value="excel_rapi" class="bg-[#131d17]">📊 Metode 2: Kirim File Excel (.xlsx) ke WA</option>
+                            </select>
+                            <button onclick="prosesEksporJurnal()" class="btn-neon text-xs font-bold px-3.5 py-1.5 rounded-lg transition">
+                                📲 Kirim ke WA
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Keterangan / Nama Item</label>
-                        <input type="text" id="keterangan" placeholder="Contoh: Penjualan 20 Porsi / Beli Gas" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Nominal (Rp)</label>
-                        <input type="number" id="nominal" placeholder="Contoh: 50000" min="1" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                    </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow transition">
-                        + Simpan ke Jurnal
-                    </button>
-                </form>
-            </div>
-
-            <!-- Grafik Keuangan -->
-            <div class="bg-white p-6 rounded-xl shadow-sm lg:col-span-2 flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h3 class="text-lg font-bold">Grafik Perbandingan Kas</h3>
-                    <span class="text-xs text-slate-400">Update Otomatis</span>
                 </div>
-                <div class="relative h-64 w-full flex items-center justify-center">
-                    <canvas id="grafikKeuangan"></canvas>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[#0e1611] text-slate-400 text-xs uppercase border-b border-[#213227]">
+                                <th class="py-3 px-4">Date (Tanggal)</th>
+                                <th class="py-3 px-4">Description (Keterangan)</th>
+                                <th class="py-3 px-4 text-right">Debit (Masuk)</th>
+                                <th class="py-3 px-4 text-right">Kredit (Keluar)</th>
+                                <th class="py-3 px-4 text-center">Status / Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabel-jurnal" class="text-sm divide-y divide-[#1e2d23]">
+                            <!-- Diisi JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-        </div>
-
-        <!-- 3. TABEL JURNAL UMUM -->
-        <div class="bg-white p-6 rounded-xl shadow-sm">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-3 gap-2">
-                <div>
-                    <h3 class="text-lg font-bold">Jurnal Keuangan UMKM</h3>
-                    <p class="text-xs text-slate-500">Pencatatan kronologis debit (pemasukan) dan kredit (pengeluaran)</p>
-                </div>
-                <!-- Filter & Tombol Simpan ke WhatsApp -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <select id="filter-jenis" onchange="renderAplikasi()" class="border border-slate-300 rounded-lg p-1.5 text-xs outline-none">
-                        <option value="semua">Semua Transaksi</option>
-                        <option value="pemasukan">Hanya Pemasukan</option>
-                        <option value="pengeluaran">Hanya Pengeluaran</option>
-                    </select>
-                    <button onclick="simpanKeWhatsApp()" class="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition">
-                        📲 Simpan Rekap ke WA
-                    </button>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-600 text-xs uppercase border-b">
-                            <th class="py-3 px-4">Tanggal</th>
-                            <th class="py-3 px-4">Keterangan Jurnal</th>
-                            <th class="py-3 px-4 text-right">Debit (Masuk)</th>
-                            <th class="py-3 px-4 text-right">Kredit (Keluar)</th>
-                            <th class="py-3 px-4 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabel-jurnal" class="text-sm divide-y divide-slate-200">
-                        <!-- Data Jurnal akan dimasukkan otomatis oleh JavaScript di sini -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        </section>
 
     </main>
 
-    <!-- LOGIKA PROGRAM (JAVASCRIPT) -->
+    <!-- ========================================== -->
+    <!-- LOGIKA PROGRAM JAVASCRIPT                  -->
+    <!-- ========================================== -->
     <script>
-        // 1. INISIALISASI DATA DARI LOCAL STORAGE
+        // 1. TEMPLATE AWAL BERDASARKAN JENIS USAHA
+        const templateUsahaData = {
+            jus: {
+                namaUsaha: "Kedai Jus Buah Segar",
+                menu: [
+                    { id: 1, nama: "Jus Alpukat", harga: 10000, terjual: 0 },
+                    { id: 2, nama: "Jus Mangga", harga: 10000, terjual: 0 },
+                    { id: 3, nama: "Jus Pisang / Stroberi", harga: 8000, terjual: 0 },
+                    { id: 4, nama: "Jus Jambu / Melon", harga: 8000, terjual: 0 }
+                ],
+                stok: [
+                    { id: 101, nama: "Buah Pisang", jumlah: 5, satuan: "Sisir", batas: 1 },
+                    { id: 102, nama: "Buah Alpukat", jumlah: 4, satuan: "Kg", batas: 1 },
+                    { id: 103, nama: "Es Batu Kristal", jumlah: 3, satuan: "Kantong", batas: 1 },
+                    { id: 104, nama: "Gula Pasir", jumlah: 3, satuan: "Kg", batas: 1 },
+                    { id: 105, nama: "Gelas Plastik (Cup)", jumlah: 50, satuan: "Pcs", batas: 15 },
+                    { id: 106, nama: "Penutup Gelas & Sedotan", jumlah: 50, satuan: "Pcs", batas: 15 }
+                ]
+            },
+            cimol: {
+                namaUsaha: "Gerobak Cimol & Gorengan",
+                menu: [
+                    { id: 1, nama: "Cimol Porsi Kecil", harga: 5000, terjual: 0 },
+                    { id: 2, nama: "Cimol Porsi Besar", harga: 10000, terjual: 0 },
+                    { id: 3, nama: "Kentang Goreng / Otak-otak", harga: 5000, terjual: 0 }
+                ],
+                stok: [
+                    { id: 201, nama: "Adonan Tepung Tapioka", jumlah: 5, satuan: "Kg", batas: 1 },
+                    { id: 202, nama: "Minyak Goreng", jumlah: 4, satuan: "Liter", batas: 1 },
+                    { id: 203, nama: "Gas LPG 3 Kg", jumlah: 2, satuan: "Tabung", batas: 1 },
+                    { id: 204, nama: "Bumbu Tabur (Balado/Keju)", jumlah: 6, satuan: "Bungkus", batas: 2 },
+                    { id: 205, nama: "Plastik & Tusukan", jumlah: 40, satuan: "Pcs", batas: 10 }
+                ]
+            },
+            warung: {
+                namaUsaha: "Warung Sembako & Kelontong",
+                menu: [
+                    { id: 1, nama: "Beras Eceran 1 Liter", harga: 13000, terjual: 0 },
+                    { id: 2, nama: "Mie Instan (1 Bungkus)", harga: 3500, terjual: 0 },
+                    { id: 3, nama: "Telur Ayam (1/4 Kg)", harga: 8000, terjual: 0 },
+                    { id: 4, nama: "Air Galon Isi Ulang", harga: 6000, terjual: 0 }
+                ],
+                stok: [
+                    { id: 301, nama: "Beras Karungan", jumlah: 25, satuan: "Liter", batas: 5 },
+                    { id: 302, nama: "Telur Ayam", jumlah: 10, satuan: "Kg", batas: 2 },
+                    { id: 303, nama: "Minyak Goreng Kemasan", jumlah: 12, satuan: "Pouch", batas: 3 },
+                    { id: 304, nama: "Mie Instan Kardus", jumlah: 40, satuan: "Bungkus", batas: 10 },
+                    { id: 305, nama: "Gas LPG 3 Kg", jumlah: 5, satuan: "Tabung", batas: 2 }
+                ]
+            },
+            warkop: {
+                namaUsaha: "Warkop & Kedai Kopi",
+                menu: [
+                    { id: 1, nama: "Kopi Hitam / Susu", harga: 5000, terjual: 0 },
+                    { id: 2, nama: "Es Teh Manis", harga: 4000, terjual: 0 },
+                    { id: 3, nama: "Indomie Rebus/Goreng Telur", harga: 10000, terjual: 0 },
+                    { id: 4, nama: "Gorengan (Satuan)", harga: 1500, terjual: 0 }
+                ],
+                stok: [
+                    { id: 401, nama: "Kopi Sachet / Bubuk", jumlah: 30, satuan: "Sachet", batas: 10 },
+                    { id: 402, nama: "Susu Kental Manis", jumlah: 4, satuan: "Kaleng", batas: 1 },
+                    { id: 403, nama: "Mie Instan", jumlah: 25, satuan: "Bungkus", batas: 5 },
+                    { id: 404, nama: "Telur Ayam", jumlah: 2, satuan: "Kg", batas: 1 },
+                    { id: 405, nama: "Es Batu & Air Galon", jumlah: 3, satuan: "Galon", batas: 1 }
+                ]
+            }
+        };
+
+        // 2. INISIALISASI STATE DARI LOCAL STORAGE
+        let profilUser = JSON.parse(localStorage.getItem('fintrack_profil')) || null;
         let daftarTransaksi = JSON.parse(localStorage.getItem('data_umkm')) || [];
+        let daftarMenu = JSON.parse(localStorage.getItem('fintrack_menu')) || [];
+        let daftarStok = JSON.parse(localStorage.getItem('fintrack_stok')) || [];
+        let daftarKasbon = JSON.parse(localStorage.getItem('fintrack_kasbon')) || [];
         let chartInstance = null;
 
-        // Set tanggal hari ini secara default di form input
         document.getElementById('tanggal').valueAsDate = new Date();
 
-        // Format angka ke Rupiah
         function formatRupiah(angka) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
                 currency: 'IDR',
                 minimumFractionDigits: 0
-            }).format(angka);
+            }).format(angka || 0);
         }
 
-        // 2. FUNGSI MENAMBAH TRANSAKSI BARU
+        function simpanSemuaKeStorage() {
+            localStorage.setItem('fintrack_profil', JSON.stringify(profilUser));
+            localStorage.setItem('data_umkm', JSON.stringify(daftarTransaksi));
+            localStorage.setItem('fintrack_menu', JSON.stringify(daftarMenu));
+            localStorage.setItem('fintrack_stok', JSON.stringify(daftarStok));
+            localStorage.setItem('fintrack_kasbon', JSON.stringify(daftarKasbon));
+        }
+
+        // 3. SISTEM LOGIN & PILIH USAHA
+        function cekStatusLogin() {
+            if (!profilUser) {
+                document.getElementById('modal-login').classList.remove('hidden');
+            } else {
+                document.getElementById('modal-login').classList.add('hidden');
+                document.getElementById('sapaan-user').innerText = `Halo, ${profilUser.nama}! Overview of your financial performance`;
+                document.getElementById('badge-usaha').innerText = profilUser.usaha;
+            }
+        }
+
+        function cekTemplateUsaha() {
+            const val = document.getElementById('pilih-template-usaha').value;
+            const boxKustom = document.getElementById('box-usaha-kustom');
+            if (val === 'kustom') {
+                boxKustom.classList.remove('hidden');
+                document.getElementById('input-nama-usaha').required = true;
+            } else {
+                boxKustom.classList.add('hidden');
+                document.getElementById('input-nama-usaha').required = false;
+            }
+        }
+
+        document.getElementById('form-login').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nama = document.getElementById('input-nama-user').value.trim();
+            const kodeTemplate = document.getElementById('pilih-template-usaha').value;
+            
+            let namaUsaha = "";
+            if (kodeTemplate === 'kustom') {
+                namaUsaha = document.getElementById('input-nama-usaha').value.trim() || "Usaha UMKM Mandiri";
+                if (daftarMenu.length === 0) {
+                    daftarMenu = [{ id: Date.now(), nama: "Produk Utama", harga: 10000, terjual: 0 }];
+                }
+            } else {
+                const tpl = templateUsahaData[kodeTemplate];
+                namaUsaha = tpl.namaUsaha;
+                daftarMenu = JSON.parse(JSON.stringify(tpl.menu));
+                daftarStok = JSON.parse(JSON.stringify(tpl.stok));
+            }
+
+            profilUser = { nama: nama, usaha: namaUsaha, template: kodeTemplate };
+            simpanSemuaKeStorage();
+            cekStatusLogin();
+            renderAplikasi();
+        });
+
+        function gantiProfilUsaha() {
+            if (confirm("Ingin mengganti nama atau jenis usaha? (Jika memilih template usaha baru, daftar menu & stok akan disesuaikan dengan usaha baru)")) {
+                document.getElementById('input-nama-user').value = profilUser ? profilUser.nama : '';
+                document.getElementById('modal-login').classList.remove('hidden');
+            }
+        }
+
+        // 4. NAVIGASI ANTAR TAB
+        function pindahTab(namaTab) {
+            const daftarTab = ['berdagang', 'stok', 'kasbon', 'jurnal'];
+            daftarTab.forEach(t => {
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-btn-${t}`);
+                btn.className = "tab-btn text-slate-400 hover:text-slate-200 hover:bg-[#131f18] px-4 py-2 rounded-xl whitespace-nowrap transition";
+            });
+
+            document.getElementById(`sec-${namaTab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${namaTab}`);
+            activeBtn.className = "tab-btn bg-[#16291e] text-[#2ce574] border border-[#2ce574]/30 px-4 py-2 rounded-xl shadow-sm whitespace-nowrap transition font-bold";
+
+            if (namaTab === 'jurnal') {
+                renderAplikasi();
+            }
+        }
+
+        // 5. FITUR KASIR CEPAT (TOMBOL + DAN -) & PENGELUARAN DARURAT
+        function bukaFormMenu() {
+            document.getElementById('form-tambah-menu').classList.toggle('hidden');
+        }
+
+        document.getElementById('form-tambah-menu').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nama = document.getElementById('nama-menu-baru').value.trim();
+            const harga = parseFloat(document.getElementById('harga-menu-baru').value);
+            daftarMenu.push({ id: Date.now(), nama, harga, terjual: 0 });
+            document.getElementById('nama-menu-baru').value = '';
+            document.getElementById('harga-menu-baru').value = '';
+            bukaFormMenu();
+            simpanSemuaKeStorage();
+            renderKasir();
+        });
+
+        function ubahCounterMenu(id, delta) {
+            const item = daftarMenu.find(m => m.id === id);
+            if (!item) return;
+            item.terjual = Math.max(0, (item.terjual || 0) + delta);
+            simpanSemuaKeStorage();
+            renderKasir();
+        }
+
+        function hapusMenuKasir(id) {
+            if (confirm('Hapus menu ini dari daftar kasir?')) {
+                daftarMenu = daftarMenu.filter(m => m.id !== id);
+                simpanSemuaKeStorage();
+                renderKasir();
+            }
+        }
+
+        function resetCounterKasir() {
+            if (confirm('Reset semua hitungan porsi terjual saat ini menjadi 0?')) {
+                daftarMenu.forEach(m => m.terjual = 0);
+                simpanSemuaKeStorage();
+                renderKasir();
+            }
+        }
+
+        function simpanTutupBuku() {
+            const itemTerjual = daftarMenu.filter(m => m.terjual > 0);
+            if (itemTerjual.length === 0) {
+                alert('Belum ada penjualan yang ditekan (+). Silakan tekan tombol + pada produk yang terjual terlebih dahulu.');
+                return;
+            }
+
+            let totalUang = 0;
+            let rincianTeks = [];
+            itemTerjual.forEach(m => {
+                totalUang += m.terjual * m.harga;
+                rincianTeks.push(`${m.terjual}x ${m.nama}`);
+            });
+
+            const keteranganJurnal = `Rekap Penjualan (${rincianTeks.join(', ')})`;
+            const hariIni = new Date().toISOString().split('T')[0];
+
+            daftarTransaksi.push({
+                id: Date.now(),
+                tanggal: hariIni,
+                jenis: 'pemasukan',
+                keterangan: keteranganJurnal,
+                nominal: totalUang
+            });
+
+            daftarMenu.forEach(m => m.terjual = 0);
+            simpanSemuaKeStorage();
+            renderAplikasi();
+            alert(`Berhasil! ${keteranganJurnal} sebesar ${formatRupiah(totalUang)} telah dimasukkan ke Jurnal Pemasukan.`);
+        }
+
+        function catatPengeluaranCepat(namaPengeluaran, nominalDefault) {
+            const hariIni = new Date().toISOString().split('T')[0];
+            daftarTransaksi.push({
+                id: Date.now(),
+                tanggal: hariIni,
+                jenis: 'pengeluaran',
+                keterangan: namaPengeluaran,
+                nominal: nominalDefault
+            });
+            simpanSemuaKeStorage();
+            renderAplikasi();
+            alert(`Tercatat! Pengeluaran "${namaPengeluaran}" sebesar ${formatRupiah(nominalDefault)} otomatis masuk ke Jurnal.`);
+        }
+
+        function pengeluaranDadakanKustom() {
+            const ket = prompt("Masukkan nama pengeluaran dadakan (Contoh: Beli Sedotan / Parkir):");
+            if (!ket) return;
+            const nom = parseFloat(prompt(`Masukkan nominal biaya untuk "${ket}" (Rp):`, "10000"));
+            if (!nom || isNaN(nom) || nom <= 0) return alert("Nominal tidak valid!");
+            catatPengeluaranCepat(ket, nom);
+        }
+
+        function renderKasir() {
+            const container = document.getElementById('daftar-menu-kasir');
+            container.innerHTML = '';
+            let totalSementara = 0;
+            let totalPorsi = 0;
+
+            daftarMenu.forEach(item => {
+                const subTotal = (item.terjual || 0) * item.harga;
+                totalSementara += subTotal;
+                totalPorsi += (item.terjual || 0);
+
+                const card = document.createElement('div');
+                card.className = "p-3.5 rounded-xl dark-subcard flex justify-between items-center shadow-sm";
+                card.innerHTML = `
+                    <div class="pr-2">
+                        <div class="flex items-center gap-1.5">
+                            <h4 class="font-bold text-sm text-white">${item.nama}</h4>
+                            <button onclick="hapusMenuKasir(${item.id})" class="text-[10px] text-slate-500 hover:text-rose-400" title="Hapus menu">✕</button>
+                        </div>
+                        <p class="text-xs text-slate-400">${formatRupiah(item.harga)} / porsi</p>
+                        <p class="text-xs font-semibold text-[#2ce574] mt-1">Subtotal: ${formatRupiah(subTotal)}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="ubahCounterMenu(${item.id}, -1)" class="w-8 h-8 rounded-lg bg-[#18261e] hover:bg-[#22352a] text-slate-200 border border-[#2a4032] font-bold text-base flex items-center justify-center transition">−</button>
+                        <span class="w-8 text-center font-bold text-lg text-white">${item.terjual || 0}</span>
+                        <button onclick="ubahCounterMenu(${item.id}, 1)" class="w-10 h-10 rounded-xl btn-neon font-bold text-xl flex items-center justify-center transition">+</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('total-kasir-sementara').innerText = formatRupiah(totalSementara);
+            document.getElementById('jumlah-item-kasir').innerText = `(${totalPorsi} porsi/item)`;
+        }
+
+        // 6. LOGIKA KALKULATOR & KEMBALIAN
+        let ekspresiCalc = "";
+
+        function calcInput(val) {
+            ekspresiCalc += val;
+            document.getElementById('calc-display').innerText = ekspresiCalc;
+        }
+
+        function calcClear() {
+            ekspresiCalc = "";
+            document.getElementById('calc-history').innerText = "0";
+            document.getElementById('calc-display').innerText = "0";
+        }
+
+        function calcDelete() {
+            ekspresiCalc = ekspresiCalc.slice(0, -1);
+            document.getElementById('calc-display').innerText = ekspresiCalc || "0";
+        }
+
+        function calcResult() {
+            try {
+                if (!ekspresiCalc) return;
+                const hasil = Function('"use strict";return (' + ekspresiCalc + ')')();
+                document.getElementById('calc-history').innerText = ekspresiCalc + " =";
+                document.getElementById('calc-display').innerText = formatRupiah(hasil);
+                ekspresiCalc = String(hasil);
+            } catch (err) {
+                document.getElementById('calc-display').innerText = "Error";
+                ekspresiCalc = "";
+            }
+        }
+
+        function ambilTotalKasirKeTagihan() {
+            const angkaBersih = parseFloat(ekspresiCalc);
+            if (!isNaN(angkaBersih) && angkaBersih > 0) {
+                document.getElementById('tagihan-pembeli').value = angkaBersih;
+            }
+        }
+
+        function hitungKembalian(uangDiterima) {
+            const tagihan = parseFloat(document.getElementById('tagihan-pembeli').value) || 0;
+            const elKembalian = document.getElementById('teks-kembalian');
+            if (uangDiterima === 0) {
+                elKembalian.innerText = "Rp 0";
+                return;
+            }
+            const selisih = uangDiterima - tagihan;
+            if (selisih < 0) {
+                elKembalian.innerText = `Kurang ${formatRupiah(Math.abs(selisih))}`;
+                elKembalian.className = "text-base font-bold text-rose-400";
+            } else {
+                elKembalian.innerText = formatRupiah(selisih);
+                elKembalian.className = "text-base font-bold text-[#2ce574]";
+            }
+        }
+
+        // 7. MANAJEMEN STOK BAHAN BAKU USAHA
+        document.getElementById('form-stok').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nama = document.getElementById('nama-bahan').value.trim();
+            const jumlah = parseFloat(document.getElementById('jumlah-stok').value);
+            const satuan = document.getElementById('satuan-stok').value.trim();
+            const batas = parseFloat(document.getElementById('batas-stok').value);
+
+            daftarStok.push({ id: Date.now(), nama, jumlah, satuan, batas });
+            document.getElementById('nama-bahan').value = '';
+            document.getElementById('jumlah-stok').value = '';
+            document.getElementById('satuan-stok').value = '';
+            simpanSemuaKeStorage();
+            renderStok();
+        });
+
+        function ubahJumlahStok(id, delta) {
+            const item = daftarStok.find(s => s.id === id);
+            if (!item) return;
+            item.jumlah = Math.max(0, parseFloat((item.jumlah + delta).toFixed(2)));
+            simpanSemuaKeStorage();
+            renderStok();
+        }
+
+        function beliStokLangsung(id) {
+            const item = daftarStok.find(s => s.id === id);
+            if (!item) return;
+
+            const tambah = parseFloat(prompt(`Beli tambahan berapa ${item.satuan} untuk "${item.nama}"?`, "5"));
+            if (!tambah || isNaN(tambah) || tambah <= 0) return;
+
+            const biaya = parseFloat(prompt(`Berapa total harga pembelian ${tambah} ${item.satuan} ${item.nama} (Rp)?\n(Otomatis dicatat ke Jurnal Pengeluaran)`, "25000"));
+            if (!biaya || isNaN(biaya) || biaya <= 0) return;
+
+            item.jumlah = parseFloat((item.jumlah + tambah).toFixed(2));
+            
+            const hariIni = new Date().toISOString().split('T')[0];
+            daftarTransaksi.push({
+                id: Date.now(),
+                tanggal: hariIni,
+                jenis: 'pengeluaran',
+                keterangan: `Beli Stok: ${item.nama} (+${tambah} ${item.satuan})`,
+                nominal: biaya
+            });
+
+            simpanSemuaKeStorage();
+            renderAplikasi();
+            alert(`Stok ${item.nama} bertambah +${tambah} ${item.satuan}, dan biaya ${formatRupiah(biaya)} tercatat di Jurnal Pengeluaran!`);
+        }
+
+        function hapusItemStok(id) {
+            if (confirm('Hapus bahan baku ini dari daftar stok?')) {
+                daftarStok = daftarStok.filter(s => s.id !== id);
+                simpanSemuaKeStorage();
+                renderStok();
+            }
+        }
+
+        function renderStok() {
+            const container = document.getElementById('daftar-stok-container');
+            container.innerHTML = '';
+            let jumlahKritis = 0;
+
+            if (daftarStok.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 col-span-2 py-4 text-center">Belum ada daftar bahan baku. Tambahkan di formulir sebelah kiri.</p>`;
+            }
+
+            daftarStok.forEach(item => {
+                const kritis = item.jumlah <= item.batas;
+                if (kritis) jumlahKritis++;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border flex flex-col justify-between gap-3 ${kritis ? 'bg-rose-950/30 border-rose-700/60' : 'dark-subcard'}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <h4 class="font-bold text-sm text-white">${item.nama}</h4>
+                                ${kritis ? `<span class="bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">Stok Menipis!</span>` : ''}
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5">Batas aman: ${item.batas} ${item.satuan}</p>
+                        </div>
+                        <button onclick="hapusItemStok(${item.id})" class="text-xs text-slate-500 hover:text-rose-400">🗑️</button>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2 border-t border-[#1e2d23]">
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="ubahJumlahStok(${item.id}, -1)" class="w-7 h-7 rounded-lg bg-[#16231b] border border-[#263c2e] hover:border-[#2ce574] text-white font-bold text-sm">−</button>
+                            <span class="px-2 font-bold text-base ${kritis ? 'text-rose-400' : 'text-[#2ce574]'}">${item.jumlah} <small class="font-normal text-xs text-slate-400">${item.satuan}</small></span>
+                            <button onclick="ubahJumlahStok(${item.id}, 1)" class="w-7 h-7 rounded-lg bg-[#16231b] border border-[#263c2e] hover:border-[#2ce574] text-white font-bold text-sm">+</button>
+                        </div>
+                        <button onclick="beliStokLangsung(${item.id})" class="text-xs btn-neon px-3 py-1.5 rounded-lg font-bold transition">
+                            🛒 Beli Stok
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('notif-stok').innerText = jumlahKritis > 0 ? `${jumlahKritis} Habis!` : daftarStok.length;
+        }
+
+        // 8. FITUR PENCATAT KASBON / PIUTANG
+        document.getElementById('form-kasbon').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nama = document.getElementById('nama-kasbon').value.trim();
+            const keterangan = document.getElementById('ket-kasbon').value.trim();
+            const nominal = parseFloat(document.getElementById('nominal-kasbon').value);
+            const hariIni = new Date().toISOString().split('T')[0];
+
+            daftarKasbon.push({
+                id: Date.now(),
+                tanggal: hariIni,
+                nama,
+                keterangan,
+                nominal
+            });
+
+            document.getElementById('nama-kasbon').value = '';
+            document.getElementById('ket-kasbon').value = '';
+            document.getElementById('nominal-kasbon').value = '';
+            simpanSemuaKeStorage();
+            renderKasbon();
+        });
+
+        function lunasiKasbon(id) {
+            const item = daftarKasbon.find(k => k.id === id);
+            if (!item) return;
+
+            if (confirm(`Tandai kasbon "${item.nama}" sebesar ${formatRupiah(item.nominal)} sebagai LUNAS dan masukkan ke Jurnal Pemasukan?`)) {
+                const hariIni = new Date().toISOString().split('T')[0];
+                daftarTransaksi.push({
+                    id: Date.now(),
+                    tanggal: hariIni,
+                    jenis: 'pemasukan',
+                    keterangan: `Pelunasan Kasbon: ${item.nama} (${item.keterangan})`,
+                    nominal: item.nominal
+                });
+
+                daftarKasbon = daftarKasbon.filter(k => k.id !== id);
+                simpanSemuaKeStorage();
+                renderAplikasi();
+            }
+        }
+
+        function hapusKasbon(id) {
+            if (confirm('Hapus catatan kasbon ini tanpa mencatat pemasukan?')) {
+                daftarKasbon = daftarKasbon.filter(k => k.id !== id);
+                simpanSemuaKeStorage();
+                renderKasbon();
+            }
+        }
+
+        function renderKasbon() {
+            const tbody = document.getElementById('tabel-kasbon');
+            tbody.innerHTML = '';
+            let totalPiutang = 0;
+
+            if (daftarKasbon.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-500 text-xs">Tidak ada pelanggan yang kasbon saat ini.</td></tr>`;
+            }
+
+            daftarKasbon.forEach(item => {
+                totalPiutang += item.nominal;
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-[#16221b] transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 text-xs text-slate-400 whitespace-nowrap">${item.tanggal}</td>
+                    <td class="py-3 px-3 font-bold text-white">${item.nama}</td>
+                    <td class="py-3 px-3 text-slate-300">${item.keterangan}</td>
+                    <td class="py-3 px-3 text-right font-bold text-amber-400 whitespace-nowrap">${formatRupiah(item.nominal)}</td>
+                    <td class="py-3 px-3 text-center space-x-1 whitespace-nowrap">
+                        <button onclick="lunasiKasbon(${item.id})" class="btn-neon text-xs px-2.5 py-1 rounded-lg font-bold transition">✅ Lunas</button>
+                        <button onclick="hapusKasbon(${item.id})" class="text-xs text-rose-400 hover:underline px-1">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('total-kasbon-card').innerText = formatRupiah(totalPiutang);
+            document.getElementById('notif-kasbon').innerText = daftarKasbon.length;
+        }
+
+        // 9. JURNAL TRANSAKSI & GRAFIK CASH FLOW TREND (SESUAI GAMBAR 1)
         document.getElementById('form-transaksi').addEventListener('submit', function(e) {
             e.preventDefault();
-
             const tanggal = document.getElementById('tanggal').value;
             const jenis = document.getElementById('jenis').value;
             const keterangan = document.getElementById('keterangan').value;
             const nominal = parseFloat(document.getElementById('nominal').value);
 
-            const transaksiBaru = {
-                id: Date.now(), // ID unik berdasarkan waktu
-                tanggal: tanggal,
-                jenis: jenis,
-                keterangan: keterangan,
-                nominal: nominal
-            };
-
-            daftarTransaksi.push(transaksiBaru);
-            simpanKeStorage();
+            daftarTransaksi.push({ id: Date.now(), tanggal, jenis, keterangan, nominal });
+            simpanSemuaKeStorage();
             renderAplikasi();
 
-            // Reset input keterangan dan nominal
             document.getElementById('keterangan').value = '';
             document.getElementById('nominal').value = '';
         });
 
-        // 3. FUNGSI MENGHAPUS SATU TRANSAKSI
         function hapusTransaksi(id) {
             daftarTransaksi = daftarTransaksi.filter(item => item.id !== id);
-            simpanKeStorage();
+            simpanSemuaKeStorage();
             renderAplikasi();
         }
 
-        // 4. FUNGSI RESET SEMUA DATA
         function hapusSemuaData() {
-            if (confirm('Yakin ingin menghapus seluruh catatan jurnal keuangan?')) {
-                daftarTransaksi = [];
-                simpanKeStorage();
-                renderAplikasi();
+            if (confirm('Yakin ingin mereset seluruh catatan jurnal, kasbon, dan stok ke awal?')) {
+                localStorage.clear();
+                location.reload();
             }
         }
 
-        // Simpan ke memori browser
-        function simpanKeStorage() {
-            localStorage.setItem('data_umkm', JSON.stringify(daftarTransaksi));
-        }
-
-        // 5. FUNGSI UTAMA: UPDATE TAMPILAN, JURNAL, DAN GRAFIK
         function renderAplikasi() {
+            renderKasir();
+            renderStok();
+            renderKasbon();
+
             const tbody = document.getElementById('tabel-jurnal');
             const filter = document.getElementById('filter-jenis').value;
             tbody.innerHTML = '';
@@ -211,99 +1168,169 @@
             let totalMasuk = 0;
             let totalKeluar = 0;
 
-            // Urutkan transaksi dari tanggal terbaru
             const transaksiTerurut = [...daftarTransaksi].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
             transaksiTerurut.forEach(item => {
-                // Hitung total keseluruhan
-                if (item.jenis === 'pemasukan') {
-                    totalMasuk += item.nominal;
-                } else {
-                    totalKeluar += item.nominal;
-                }
+                if (item.jenis === 'pemasukan') totalMasuk += item.nominal;
+                else totalKeluar += item.nominal;
 
-                // Filter tampilan tabel jurnal
                 if (filter !== 'semua' && item.jenis !== filter) return;
 
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
+                tr.className = 'hover:bg-[#16221b] transition';
                 tr.innerHTML = `
-                    <td class="py-3 px-4 whitespace-nowrap text-slate-500">${item.tanggal}</td>
-                    <td class="py-3 px-4 font-medium">${item.keterangan}</td>
-                    <td class="py-3 px-4 text-right text-emerald-600 font-semibold">
+                    <td class="py-3 px-4 whitespace-nowrap text-slate-400">${item.tanggal}</td>
+                    <td class="py-3 px-4 font-medium text-white">${item.keterangan}</td>
+                    <td class="py-3 px-4 text-right text-[#2ce574] font-semibold">
                         ${item.jenis === 'pemasukan' ? formatRupiah(item.nominal) : '-'}
                     </td>
-                    <td class="py-3 px-4 text-right text-rose-600 font-semibold">
+                    <td class="py-3 px-4 text-right text-rose-400 font-semibold">
                         ${item.jenis === 'pengeluaran' ? formatRupiah(item.nominal) : '-'}
                     </td>
                     <td class="py-3 px-4 text-center space-x-2 whitespace-nowrap">
-                        <button onclick="kirimSatuTransaksiWA(${item.id})" class="text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded font-medium transition">WA</button>
-                        <button onclick="hapusTransaksi(${item.id})" class="text-xs text-rose-500 hover:underline">Hapus</button>
+                        <button onclick="kirimSatuTransaksiWA(${item.id})" class="text-xs bg-emerald-950 text-[#2ce574] border border-emerald-700/50 hover:bg-emerald-900 px-2.5 py-1 rounded-lg font-semibold transition">WA</button>
+                        <button onclick="hapusTransaksi(${item.id})" class="text-xs text-rose-400 hover:underline">Hapus</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
             if (transaksiTerurut.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada catatan transaksi di jurnal.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-500">Belum ada catatan transaksi di jurnal.</td></tr>`;
             }
 
-            // Update Dashboard Ringkasan
             const saldoAkhir = totalMasuk - totalKeluar;
             document.getElementById('total-pemasukan').innerText = formatRupiah(totalMasuk);
             document.getElementById('total-pengeluaran').innerText = formatRupiah(totalKeluar);
             document.getElementById('saldo-akhir').innerText = formatRupiah(saldoAkhir);
 
-            // Update Grafik
-            updateGrafik(totalMasuk, totalKeluar);
+            updateGrafik();
         }
 
-        // 6. FUNGSI RENDER GRAFIK (CHART.JS)
-        function updateGrafik(masuk, keluar) {
-            const ctx = document.getElementById('grafikKeuangan').getContext('2d');
+        // Grafik Smooth Area Line Chart seperti "Cash Flow Trend" pada Gambar 1
+        function updateGrafik() {
+            const canvas = document.getElementById('grafikKeuangan');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
 
-            if (chartInstance) {
-                chartInstance.destroy(); // Hapus grafik lama sebelum menggambar ulang
+            if (chartInstance) chartInstance.destroy();
+
+            // Kelompokkan data pemasukan & pengeluaran per tanggal secara kronologis
+            const mapTanggal = {};
+            const urutKronologis = [...daftarTransaksi].sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
+            urutKronologis.forEach(item => {
+                if (!mapTanggal[item.tanggal]) {
+                    mapTanggal[item.tanggal] = { masuk: 0, keluar: 0 };
+                }
+                if (item.jenis === 'pemasukan') {
+                    mapTanggal[item.tanggal].masuk += item.nominal;
+                } else {
+                    mapTanggal[item.tanggal].keluar += item.nominal;
+                }
+            });
+
+            let labels = Object.keys(mapTanggal);
+            let dataMasuk = labels.map(tgl => mapTanggal[tgl].masuk);
+            let dataKeluar = labels.map(tgl => mapTanggal[tgl].keluar);
+
+            // Jika belum ada transaksi atau baru 1 tanggal, tambahkan titik awal agar kurva terlihat indah seperti di Gambar 1
+            if (labels.length === 0) {
+                labels = ['Awal', 'Hari Ini'];
+                dataMasuk = [0, 0];
+                dataKeluar = [0, 0];
+            } else if (labels.length === 1) {
+                labels.unshift('Sebelumnya');
+                dataMasuk.unshift(0);
+                dataKeluar.unshift(0);
             }
 
+            // Buat gradien hijau glowing di bawah garis Pemasukan sesuai Gambar 1
+            const gradientMasuk = ctx.createLinearGradient(0, 0, 0, 260);
+            gradientMasuk.addColorStop(0, 'rgba(44, 229, 116, 0.35)');
+            gradientMasuk.addColorStop(1, 'rgba(44, 229, 116, 0.0)');
+
             chartInstance = new Chart(ctx, {
-                type: 'bar',
+                type: 'line',
                 data: {
-                    labels: ['Pemasukan (Debit)', 'Pengeluaran (Kredit)', 'Saldo Bersih'],
-                    datasets: [{
-                        label: 'Nominal (Rp)',
-                        data: [masuk, keluar, masuk - keluar],
-                        backgroundColor: [
-                            'rgba(16, 185, 129, 0.8)', // Hijau Emerald
-                            'rgba(244, 63, 94, 0.8)',  // Merah Rose
-                            'rgba(59, 130, 246, 0.8)'  // Biru
-                        ],
-                        borderRadius: 6
-                    }]
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Pemasukan (Rp)',
+                            data: dataMasuk,
+                            borderColor: '#2ce574',
+                            backgroundColor: gradientMasuk,
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#131d17',
+                            pointBorderColor: '#2ce574',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Pengeluaran (Rp)',
+                            data: dataKeluar,
+                            borderColor: 'rgba(148, 163, 184, 0.45)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#131d17',
+                            pointBorderColor: 'rgba(148, 163, 184, 0.6)',
+                            pointRadius: 3,
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0e1712',
+                            titleColor: '#94a3b8',
+                            bodyColor: '#2ce574',
+                            borderColor: '#2ce574',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatRupiah(context.parsed.y);
+                                }
+                            }
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true }
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        }
                     }
                 }
             });
         }
 
-        // Jalankan aplikasi pertama kali saat halaman dibuka
-        renderAplikasi();
+        // 10. FITUR PILIHAN METODE EKSPOR JURNAL (TEKS WA ATAU FILE EXCEL LANGSUNG KE WA)
+        function prosesEksporJurnal() {
+            const metode = document.getElementById('metode-jurnal').value;
+            if (metode === 'wa_teks') {
+                simpanKeWhatsApp();
+            } else {
+                kirimFileExcelKeWA();
+            }
+        }
 
-        // --- TEMPAT PENGEMBANGAN FITUR BARU NANTI ---
-        // Contoh: Fungsi export ke Excel/CSV, fitur kategori, atau cetak laporan
-        
-        // FUNGSI SIMPAN REKAP JURNAL KE WHATSAPP (SUDAH DIPERBAIKI)
+        // Metode 1: Teks Biasa ke WhatsApp
         function simpanKeWhatsApp() {
             if (daftarTransaksi.length === 0) {
-                alert('Belum ada catatan transaksi untuk disimpan ke WhatsApp!');
+                alert('Belum ada catatan transaksi untuk dikirim ke WhatsApp!');
                 return;
             }
 
@@ -331,7 +1358,11 @@
                 day: 'numeric', month: 'long', year: 'numeric'
             });
 
-            let pesanWA = `*📊 LAPORAN KEUANGAN FinTrack UMKM*\n`;
+            const namaUsaha = profilUser ? profilUser.usaha : 'UMKM';
+            const namaPemilik = profilUser ? profilUser.nama : '-';
+
+            let pesanWA = `*📊 LAPORAN JURNAL ${namaUsaha.toUpperCase()}*\n`;
+            pesanWA += `Pemilik: ${namaPemilik}\n`;
             pesanWA += `Dicetak: ${tanggalCetak}\n`;
             pesanWA += `----------------------------------\n`;
             pesanWA += `*RINCIAN JURNAL (${filter.toUpperCase()}):*\n`;
@@ -345,7 +1376,101 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(pesanWA)}`, '_blank');
         }
 
-        // FUNGSI KIRIM SATU TRANSAKSI SAJA KE WHATSAPP
+        // Metode 2: Kirim File Excel (.xlsx) Rapi Langsung ke WhatsApp
+        async function kirimFileExcelKeWA() {
+            if (daftarTransaksi.length === 0) {
+                alert('Belum ada catatan transaksi untuk diekspor ke Excel!');
+                return;
+            }
+
+            const filter = document.getElementById('filter-jenis').value;
+            const transaksiTerurut = [...daftarTransaksi].sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
+            const namaUsaha = profilUser ? profilUser.usaha : 'Usaha UMKM';
+            const namaPemilik = profilUser ? profilUser.nama : '-';
+            const tanggalCetak = new Date().toLocaleDateString('id-ID');
+
+            // Susun struktur baris Excel agar rapi
+            const dataRows = [
+                [`LAPORAN JURNAL KEUANGAN - ${namaUsaha.toUpperCase()}`],
+                [`Nama Pemilik: ${namaPemilik}`, "", `Tanggal Unduh: ${tanggalCetak}`],
+                [],
+                ["No", "Tanggal", "Keterangan Transaksi", "Jenis", "Debit (Pemasukan Rp)", "Kredit (Pengeluaran Rp)"]
+            ];
+
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+            let no = 1;
+
+            transaksiTerurut.forEach(item => {
+                if (filter !== 'semua' && item.jenis !== filter) return;
+
+                const debit = item.jenis === 'pemasukan' ? item.nominal : 0;
+                const kredit = item.jenis === 'pengeluaran' ? item.nominal : 0;
+
+                totalMasuk += debit;
+                totalKeluar += kredit;
+
+                dataRows.push([
+                    no++,
+                    item.tanggal,
+                    item.keterangan,
+                    item.jenis.toUpperCase(),
+                    debit,
+                    kredit
+                ]);
+            });
+
+            const saldoAkhir = totalMasuk - totalKeluar;
+
+            dataRows.push([]);
+            dataRows.push(["", "", "TOTAL PEMASUKAN (DEBIT)", "", totalMasuk, ""]);
+            dataRows.push(["", "", "TOTAL PENGELUARAN (KREDIT)", "", "", totalKeluar]);
+            dataRows.push(["", "", "SALDO BERSIH (KAS AKHIR)", "", saldoAkhir, ""]);
+
+            const ws = XLSX.utils.aoa_to_sheet(dataRows);
+            ws['!cols'] = [
+                { wch: 5 },
+                { wch: 14 },
+                { wch: 42 },
+                { wch: 15 },
+                { wch: 22 },
+                { wch: 22 }
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Jurnal Keuangan");
+
+            const namaFile = `Jurnal_${namaUsaha.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+            // Konversi Workbook ke Binary Array lalu ke File Object agar bisa dikirim langsung ke WhatsApp
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const fileExcel = new File([blob], namaFile, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+            const pesanPengantar = `📊 *Laporan Jurnal Excel ${namaUsaha}*\nPemilik: ${namaPemilik}\nTotal Pemasukan: ${formatRupiah(totalMasuk)}\nTotal Pengeluaran: ${formatRupiah(totalKeluar)}\nSaldo Bersih: ${formatRupiah(saldoAkhir)}`;
+
+            // Cek apakah perangkat mendukung pengiriman file langsung (Web Share API Level 2 di HP/Tablet/Browser Modern)
+            if (navigator.canShare && navigator.canShare({ files: [fileExcel] })) {
+                try {
+                    await navigator.share({
+                        files: [fileExcel],
+                        title: `Jurnal Keuangan ${namaUsaha}`,
+                        text: pesanPengantar
+                    });
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // User membatalkan pilihan share
+                }
+            }
+
+            // Fallback untuk Laptop/PC yang tidak mendukung Share File langsung:
+            // Otomatis unduh file Excel-nya dan langsung buka chat WhatsApp
+            XLSX.writeFile(wb, namaFile);
+            const pesanFallback = `${pesanPengantar}\n\n_(File Excel *${namaFile}* telah terunduh otomatis di perangkat Anda, silakan tarik/lampirkan file tersebut ke chat ini)_`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(pesanFallback)}`, '_blank');
+        }
+
         function kirimSatuTransaksiWA(id) {
             const item = daftarTransaksi.find(t => t.id === id);
             if (!item) return;
@@ -361,6 +1486,10 @@
 
             window.open(`https://wa.me/?text=${encodeURIComponent(pesanWA)}`, '_blank');
         }
+
+        // Jalankan saat pertama kali dibuka
+        cekStatusLogin();
+        renderAplikasi();
     </script>
 </body>
 </html>
